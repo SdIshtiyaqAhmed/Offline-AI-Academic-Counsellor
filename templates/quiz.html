@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Performance Quiz</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f4f4f4;
+            color: #333;
+            transition: background 0.3s, color 0.3s;
+        }
+        /* Navigation Bar */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            background: linear-gradient(to right, #007bff, #00d4ff);
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        .container {
+            width: 90%;
+            max-width: 500px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+            margin-top: 20px;
+            color: black;
+        }
+        h1 {
+            background-color: #007bff;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .question {
+            text-align: left;
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+            padding: 10px;
+        }
+        label {
+            display: flex;
+            align-items: center;
+            background: #f1f1f1;
+            padding: 12px;
+            margin: 5px 0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.3s ease-in-out;
+        }
+        label:hover {
+            background: #e0e0e0;
+        }
+        input[type="radio"] {
+            margin-right: 10px;
+            transform: scale(1.2);
+            cursor: pointer;
+        }
+        button {
+            background: #2575fc;
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            margin-top: 20px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            transition: 0.3s ease-in-out;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #result {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 20px;
+            color: green;
+        }
+        #timer {
+            font-size: 18px;
+            font-weight: bold;
+            color: red;
+            margin-top: 10px;
+        }
+        #skip-btn {
+            background: #dc3545;
+            display: none;
+        }
+        #skip-btn:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div>Student Performance Assessment Quiz</div>
+    </header>
+    <div class="container">
+        <button id="start-btn" onclick="loadQuiz()">Start Quiz</button>
+        <div id="quiz-container" style="display: none;">
+            <p id="timer"></p>
+            <div id="question-container"></div>
+            <button id="next-btn" style="display:none;" onclick="nextQuestion()">Next</button>
+            <button id="skip-btn" onclick="skipQuiz()">⏩ Skip Quiz</button> <!-- Skip Quiz Button -->
+        </div>
+        <p id="result"></p>
+    </div>
+
+    <script>
+        let quizData = [];
+let currentQuestionIndex = 0;
+let totalScore = 0;
+let topicScores = {};  // ✅ Store scores for each topic
+let timer;
+let timeLeft = 15;
+
+function loadQuiz() {
+    fetch("/quiz", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic: "", num_questions: 5 })  // Get all topics
+    })
+    .then(response => response.json())
+    .then(data => {
+        quizData = data.quiz;
+        currentQuestionIndex = 0;
+        totalScore = 0;
+        topicScores = {};  // ✅ Reset topic-wise scores
+        document.getElementById("quiz-container").style.display = "block"; 
+        document.getElementById("start-btn").style.display = "none"; 
+        document.getElementById("result").innerHTML = "";  
+        document.getElementById("skip-btn").style.display = "block"; 
+        showQuestion();
+    })
+    .catch(error => console.error("Error fetching quiz data:", error));
+}
+
+function showQuestion() {
+    if (currentQuestionIndex >= quizData.length) {
+        endQuiz(false);
+        return;
+    }
+
+    let questionObj = quizData[currentQuestionIndex];
+    let questionContainer = document.getElementById("question-container");
+    let nextButton = document.getElementById("next-btn");
+
+    questionContainer.innerHTML = `
+        <div class="question">${currentQuestionIndex + 1}. ${questionObj.question}</div>
+        <div class="options">
+            ${questionObj.options.map(option => ` 
+                <label>
+                    <input type="radio" name="question" value="${option.weight}" data-topic="${questionObj.topic}" onclick="enableNext()"> 
+                    ${option.text}
+                </label>
+            `).join('')}
+        </div>
+    `;
+
+    nextButton.style.display = "none"; 
+    startTimer();
+}
+
+function enableNext() {
+    document.getElementById("next-btn").style.display = "block";
+}
+
+function startTimer() {
+    timeLeft = 15;
+    document.getElementById("timer").innerHTML = `Time Left: ${timeLeft}s`;
+
+    timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById("timer").innerHTML = `Time Left: ${timeLeft}s`;
+        
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            nextQuestion();
+        }
+    }, 1000);
+}
+
+function nextQuestion() {
+    clearInterval(timer);
+    let selectedOption = document.querySelector('input[name="question"]:checked');
+
+    if (selectedOption) {
+        let weightage = parseInt(selectedOption.value);
+        let topic = selectedOption.getAttribute("data-topic");  // ✅ Get topic
+
+        if (!isNaN(weightage)) {
+            totalScore += weightage;
+            if (!topicScores[topic]) {
+                topicScores[topic] = 0;
+            }
+            topicScores[topic] += weightage;  // ✅ Store topic-wise score
+        }
+    }
+
+    currentQuestionIndex++;
+    showQuestion();
+}
+
+function skipQuiz() {  
+    clearInterval(timer);
+    endQuiz(true); 
+}
+
+function endQuiz(skipped = false) {
+    document.getElementById("quiz-container").style.display = "none";
+
+    let topicScoreText = Object.entries(topicScores)
+        .map(([topic, score]) => `<p><strong>${topic}:</strong> ${score}</p>`)
+        .join("");
+
+    document.getElementById("result").innerHTML = `
+        <h2>🎉 Quiz ${skipped ? "Skipped" : "Completed"}</h2>
+        <p style="font-size: 20px; font-weight: bold; color: green;">
+            ✅ Your Score: <strong>${totalScore}</strong> ${skipped ? "(Partial Score)" : ""}
+        </p>
+        ${topicScoreText}  <!-- ✅ Show topic-wise scores -->
+    `;
+
+    let skipButton = document.getElementById("skip-btn");
+    if (skipButton) {
+        skipButton.style.display = "none";
+    }
+
+    saveScores(skipped);
+}
+
+function saveScores(skipped) {
+    let student_name = "";  
+
+    fetch('/check_student', { method: 'GET' })
+    .then(response => response.json())
+    .then(data => {
+        if (data.exists) {
+            student_name = data.name;
+        } else {
+            student_name = prompt("Enter your name:");
+        }
+
+        let studentData = {
+            name: student_name,
+            total_score: totalScore,
+            skipped: skipped,
+            topic_scores: topicScores  // ✅ Send topic-wise scores
+        };
+
+        return fetch('/save_scores', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(studentData)
+        });
+    })
+    .then(response => response.text())
+    .then(data => console.log(data))
+    .catch(error => console.error('Error:', error));
+}
+    </script>
+</body>
+</html>

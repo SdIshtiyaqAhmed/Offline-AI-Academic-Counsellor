@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Counselor Chatbot</title>
+    <style>
+        /* General Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            display: flex;
+            height: 100vh;
+            background: #f9f9f9;
+            transition: background 0.3s ease-in-out;
+        }
+
+        /* Dark mode styles */
+        .dark-mode {
+            background: #181818;
+            color: white;
+        }
+
+        .dark-mode .chat-box-container {
+            background: #222;
+            box-shadow: none;
+        }
+
+        .dark-mode .chat-header {
+            background: #333;
+        }
+
+        .dark-mode .chat-box {
+            background: #1e1e1e;
+        }
+
+        .dark-mode .input-container {
+            background: #222;
+            border-top: 1px solid #444;
+        }
+
+        .dark-mode input {
+            background: #2a2a2a;
+            color: white;
+            border: 1px solid #555;
+        }
+
+        .dark-mode button {
+            background: #444;
+            color: white;
+        }
+
+        .dark-mode button:hover {
+            background: #555;
+        }
+
+        .dark-mode .bot-message {
+            background: #333;
+            color: white;
+        }
+
+        /* Layout */
+        .chat-container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .chat-history {
+            width: 22%;
+            background: #2c3e50;
+            color: white;
+            padding: 15px;
+            overflow-y: auto;
+            transition: width 0.3s ease;
+            border-right: 3px solid #34495e;
+        }
+
+        .chat-history h3 {
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            font-size: 16px;
+            letter-spacing: 1px;
+            color: #ecf0f1;
+        }
+
+        .chat-history div {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+            background: #34495e;
+        }
+
+        .chat-history div:hover {
+            background: #1abc9c;
+        }
+
+        .chat-box-container {
+            width: 78%;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-header {
+            background: #3498db;
+            color: white;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .theme-toggle, .new-chat {
+            background: white;
+            color: #3498db;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .theme-toggle:hover, .new-chat:hover {
+            background: #ddd;
+        }
+
+        .chat-box {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            background: #f8f9fa;
+            transition: background 0.3s ease-in-out;
+        }
+
+        .message {
+            max-width: 75%;
+            padding: 14px;
+            margin: 10px 12px;
+            border-radius: 18px;
+            font-size: 15px;
+            line-height: 1.5;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transform: translateY(10px);
+            animation: fadeInUp 0.3s ease-out forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .user-message {
+            background: #3498db;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+
+        .bot-message {
+            background: #ecf0f1;
+            color: #333;
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+
+        .loading-message {
+        display: flex;
+        align-items: center;
+        }
+
+        .dot {
+            font-size: 30px;
+            color: #3498db;
+            animation: blink 1.2s infinite;
+        }
+
+        .dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes blink {
+            0% { opacity: 0.3; }
+            50% { opacity: 1; }
+            100% { opacity: 0.3; }
+        }
+
+        .input-container {
+            display: flex;
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #ddd;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            margin-left: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: all 0.3s ease-in-out;
+        }
+
+        button:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+
+        .code-block {
+            color: white;
+            position: relative;
+            background: #2d2d2d;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+
+        .code-block pre {
+            margin: 0;
+            overflow-x: auto;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background: #2980b9;
+        }
+
+        .save-pdf {
+            background: white;
+            color: #3498db;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .save-pdf:hover {
+            background: #ddd;
+        }
+
+        .dark-mode .save-pdf {
+            background: #444;
+            color: white;
+        }
+
+        .dark-mode .save-pdf:hover {
+            background: #555;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .chat-container, .chat-container * {
+                visibility: visible;
+            }
+            .chat-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: auto;
+                overflow: visible !important;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-history" id="chat-history">
+            <h3>Chat History</h3>
+        </div>        
+        <div class="chat-box-container">
+            <div class="chat-header">
+                Academic Counselor Chatbot
+                <div style="display: flex; gap: 10px;">
+                    <button class="new-chat" onclick="newChat()">New Chat</button>
+                    <button class="theme-toggle" onclick="toggleTheme()">Dark Mode</button>
+                    <button class="save-pdf" onclick="saveAsPDF()">Save as PDF</button>
+                    <label for="modelSelect">Select Model:</label>
+                    <select id="modelSelect">
+                    <option value="small">SmolLM2-135M (Faster)</option>
+                    <option value="large">SmolLM2-360M (Smarter)</option>
+                    </select>
+
+                </div>                
+            </div>
+            <div class="chat-box" id="chat-box"></div>
+            <div class="input-container">
+                <input type="text" id="user-input" placeholder="Ask about career guidance, study tips..." onkeypress="handleKeyPress(event)">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chats = [];
+
+        function saveAsPDF() {
+            let originalTitle = document.title;
+            document.title = "Chat_History"; // Change title for print
+            window.print();
+            document.title = originalTitle; // Restore original title
+        }
+
+        function appendMessage(content, className) {
+            let chatBox = document.getElementById("chat-box");
+            let messageDiv = document.createElement("div");
+            messageDiv.className = "message " + className;
+
+            // Separate normal text and code blocks
+            let formattedContent = content.replace(/```(\w+)?\n([\s\S]*?)```/g, function(match, lang, code) {
+                return `
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        <pre><code class="language-${lang || 'plaintext'}">${escapeHTML(code)}</code></pre>
+                    </div>
+                `;
+            });
+
+            messageDiv.innerHTML = formattedContent;
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+        }
+        function copyCode(button) {
+            let codeBlock = button.nextElementSibling.textContent;
+            navigator.clipboard.writeText(codeBlock).then(() => {
+                button.textContent = "Copied!";
+                setTimeout(() => button.textContent = "Copy", 1500);
+            }).catch(err => console.error("Error copying:", err));
+        }
+
+        function typeWriterEffect(element, htmlContent, callback) {
+            let tempContainer = document.createElement("div");
+            tempContainer.innerHTML = htmlContent;
+
+            let text = tempContainer.textContent.trim(); // Get plain text version
+            element.textContent = ""; // Clear previous content
+
+            let i = 0;
+            function typeCharacter() {
+                if (i < text.length) {
+                    element.textContent += text.charAt(i);
+                    i++;
+                    setTimeout(typeCharacter, 10); // Adjust speed
+                } else {
+                    // After typing effect completes, replace text with full HTML content
+                    element.innerHTML = htmlContent.replace(/```(\w+)?\n([\s\S]*?)```/g, function(match, lang, code) {return `<pre><code class="${lang || 'plaintext'}">${escapeHTML(code)}</code></pre>`;});
+                    if (callback) callback(); // Execute callback if needed
+                }
+            }
+            typeCharacter();
+        }
+
+        // Before displaying, escape special characters
+        function escapeHTML(str) {
+            return str.replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+        }
+
+        function saveChat() {
+            const chatContent = document.getElementById("chat-box").innerHTML;
+            if (chatContent.trim() !== "") {
+                let timestamp = new Date().toLocaleTimeString();
+                chats.push({ time: timestamp, content: chatContent });
+                updateChatHistory();
+            }
+        }
+
+        function updateChatHistory() {
+            let chatHistory = document.getElementById("chat-history");
+            chatHistory.innerHTML = "<h3>Chat History</h3>";
+            chats.forEach((chat, index) => {
+                let chatEntry = document.createElement("div");
+                chatEntry.innerHTML = `<strong>${chat.time}</strong><br>Chat ${index + 1}`;
+                chatEntry.onclick = () => loadChat(index);
+                chatHistory.appendChild(chatEntry);
+            });
+        }
+
+        function loadChat(index) {
+            document.getElementById("chat-box").innerHTML = chats[index].content;
+        }
+
+        function newChat() {
+            saveChat();  // Save current chat if any
+            document.getElementById("chat-box").innerHTML = "";  // Clear chat
+            document.getElementById("user-input").value = ""; // Clear input field
+        }
+
+        function showLoadingAnimation() {
+            let chatBox = document.getElementById("chat-box");
+            let loadingDiv = document.createElement("div");
+            loadingDiv.className = "message bot-message loading-message";
+            loadingDiv.id = "loading-message";
+            loadingDiv.innerHTML = '<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span>';
+            chatBox.appendChild(loadingDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function removeLoadingAnimation() {
+            let loadingDiv = document.getElementById("loading-message");
+            if (loadingDiv) loadingDiv.remove();
+        }
+
+        function sendMessage() {
+            let userInput = document.getElementById("user-input");
+            let message = userInput.value.trim();
+            if (message === "") return;
+
+            // Append user message
+            appendMessage(message, "user-message");
+
+            // Show bot typing animation
+            showLoadingAnimation();
+
+            // Send request to Flask backend
+            fetch("/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                removeLoadingAnimation(); // Remove animation
+                appendMessage(data.response, "bot-message"); // Display AI response
+            })
+            .catch(error => {
+                removeLoadingAnimation();
+                console.error("Error:", error);
+                appendMessage("Error communicating with the server.", "bot-message");
+            });
+
+            userInput.value = ""; // Clear input field
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle("dark-mode");
+            
+            let isDarkMode = document.body.classList.contains("dark-mode");
+            localStorage.setItem("theme", isDarkMode ? "dark" : "light");
+
+            let btn = document.querySelector(".theme-toggle");
+            btn.textContent = isDarkMode ? "Light Mode" : "Dark Mode";
+        }
+
+        // Apply the saved theme on page load
+        window.onload = function () {
+            let savedTheme = localStorage.getItem("theme");
+            if (savedTheme === "dark") {
+                document.body.classList.add("dark-mode");
+                document.querySelector(".theme-toggle").textContent = "Light Mode";
+            }
+        };
+        document.getElementById("sendButton").addEventListener("click", function () {
+        const message = document.getElementById("messageInput").value;
+        const modelChoice = document.getElementById("modelSelect").value;
+
+        fetch("/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message, model: modelChoice })
+        })
+            .then((response) => response.json())
+            .then((data) => {
+            document.getElementById("chatBox").innerHTML += `<p><strong>You:</strong> ${message}</p><p><strong>AI:</strong> ${data.response}</p>`;
+            });
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Student Guidance System</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Segoe UI', sans-serif;
+      overflow-x: hidden;
+      transition: background 0.5s ease, color 0.5s ease;
+    }
+
+    body {
+      background: linear-gradient(to bottom, #f2f6fc, #e0eafc);
+      color: #111;
+      position: relative;
+    }
+
+    .parallax {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -2;
+      background: url('https://www.transparenttextures.com/patterns/stardust.png') repeat;
+      background-size: cover;
+      animation: moveBackground 60s linear infinite;
+      opacity: 0.4;
+    }
+
+    @keyframes moveBackground {
+      0% { background-position: 0 0; }
+      100% { background-position: 1000px 1000px; }
+    }
+
+    header {
+      background: linear-gradient(to right, #007bff, #00c6ff);
+      padding: 30px 20px;
+      color: white;
+      font-size: 28px;
+      font-weight: 700;
+      text-align: center;
+      position: relative;
+      z-index: 2;
+      transition: background 0.5s ease;
+    }
+
+    .dark-mode header {
+      background: linear-gradient(to right, #050d23, #1f2b3e);
+      color: #ffffff;
+    }
+
+    #studentNameDisplay {
+      font-size: 18px;
+      font-weight: 500;
+      margin-top: 10px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 40px 20px;
+      text-align: center;
+      z-index: 1;
+      position: relative;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(10px);
+      border-radius: 18px;
+      padding: 40px 30px;
+      margin-bottom: 30px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+    }
+
+    .card h2, .card p {
+      transition: color 0.3s;
+    }
+
+    .dark-mode .card {
+      background: rgba(30, 30, 40, 0.7);
+    }
+
+    .dark-mode .card h2,
+    .dark-mode .card p {
+      color: #fff !important;
+    }
+
+    h2 {
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+
+    p {
+      font-size: 16px;
+      color: #333;
+    }
+
+    .cta-button {
+      margin-top: 25px;
+      padding: 14px 24px;
+      background: #007bff;
+      color: white;
+      text-decoration: none;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 10px;
+      display: inline-block;
+      transition: background 0.3s ease, transform 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+    }
+
+    .cta-button:hover {
+      background: #0056b3;
+      transform: scale(1.05);
+    }
+
+    .dark-mode .cta-button {
+      background: #00aaff;
+    }
+
+    .dark-mode .cta-button:hover {
+      background: #0088cc;
+    }
+
+    .toggle-dark-mode {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #ffffffcc;
+      border: none;
+      padding: 12px 14px;
+      border-radius: 50px;
+      cursor: pointer;
+      font-size: 18px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      transition: background 0.3s, transform 0.3s;
+      z-index: 1000;
+    }
+
+    .toggle-dark-mode:hover {
+      transform: scale(1.1);
+    }
+
+    .dark-mode .toggle-dark-mode {
+      background: #1e1e1ecc;
+      color: #fff;
+    }
+
+  </style>
+</head>
+<body>
+
+  <header>
+    AI Student Guidance System
+    <div id="studentNameDisplay">👋 Welcome, Student!</div>
+  </header>
+
+  <div class="container">
+    <div class="card">
+      <h2>Welcome to Your Learning Journey 🚀</h2>
+      <p>Start exploring your personalized academic guidance below.</p>
+    </div>
+
+    <div class="card">
+      <h2>Take the quiz for a personalized experience</h2>
+      <p>Analyze your skills, interests, and performance to discover your ideal path.</p>
+      <a href="{{ url_for('quiz') }}" class="cta-button">📝 Start Quiz</a>
+    </div>
+
+    <div class="card">
+      <h2>Personalized Academic Guidance</h2>
+      <p>Get smart insights tailored to your interests and performance.</p>
+      <a href="{{ url_for('chat') }}" class="cta-button">🔍 Try Our AI Counselor</a>
+    </div>
+  </div>
+
+  <button class="toggle-dark-mode" onclick="toggleDarkMode()" id="modeToggle">🌙</button>
+
+  <script>
+    // Dark Mode Toggle
+    function toggleDarkMode() {
+      const isDark = document.body.classList.toggle("dark-mode");
+      document.getElementById("modeToggle").textContent = isDark ? "☀️" : "🌙";
+      localStorage.setItem("darkMode", isDark);
+    }
+
+    // Particle Background
+    let particles = [];
+    let mouse = { x: null, y: null };
+    let isCursorInside = false;
+
+    function initParticles() {
+  const canvas = document.getElementById("particles");
+  const ctx = canvas.getContext("2d");
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  for (let i = 0; i < 150; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 2 + 1,
+      dx: (Math.random() - 0.5) * 0.5,
+      dy: (Math.random() - 0.5) * 0.5,
+      alpha: Math.random()
+    });
+  }
+
+  window.addEventListener("mousemove", (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+    isCursorInside = true;
+  });
+
+  window.onresize = () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  };
+
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height); // No trails
+
+    for (let p of particles) {
+      if (isCursorInside && mouse.x && mouse.y) {
+        const dx = mouse.x - p.x;
+        const dy = mouse.y - p.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const maxDist = 150;
+        const forceFactor = document.body.classList.contains("dark-mode") ? -1 : 1;
+
+        if (dist < maxDist) {
+          const force = (1 - dist / maxDist) * forceFactor;
+          p.dx += force * dx * 0.0008;
+          p.dy += force * dy * 0.0008;
+        }
+      }
+
+      p.x += p.dx;
+      p.y += p.dy;
+
+      if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = document.body.classList.contains("dark-mode")
+        ? "rgba(0, 255, 255, 0.5)"
+        : "rgba(0, 123, 255, 0.4)";
+      ctx.fill();
+    }
+
+    requestAnimationFrame(animate);
+  }
+  animate();
+}
+
+  </script>
+</body>
+</html>
